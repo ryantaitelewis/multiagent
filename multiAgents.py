@@ -320,10 +320,57 @@ def betterEvaluationFunction(currentGameState: GameState):
     Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
     evaluation function (question 5).
 
-    DESCRIPTION: <write something here so we know what you did>
+    DESCRIPTION: <We based our evaluation on multiple factors:
+Rewards getting closer to food (+10 / distance)
+Penalizes having many food left (-4 per food)
+Adds strong penalties when close to ghosts (or zero if on the same tile)
+Rewards being close to capsules (+5 / distance)
+Penalizes having capsules left (-20 per capsule)>
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    from util import manhattanDistance
+    score = currentGameState.getScore()
 
-# Abbreviation
+    pos = currentGameState.getPacmanPosition()
+    food = currentGameState.getFood().asList()
+    ghosts = currentGameState.getGhostStates()
+    capsules = currentGameState.getCapsules()
+
+    if food:
+        food_distances = [manhattanDistance(pos, food_pos) for food_pos in food]
+        closest_food_dist = min(food_distances)
+        food_score = 10.0 / (closest_food_dist + 1)
+        food_count_penalty = -4 * len(food)
+    else:
+        food_score = 0
+        food_count_penalty = 0
+
+    ghost_score = 0
+    for ghost in ghosts:
+        ghost_pos = ghost.getPosition()
+        ghost_dist = manhattanDistance(pos, ghost_pos)
+
+        if ghost.scaredTimer > 0:
+            if ghost_dist > 0:
+                ghost_score += 200 / ghost_dist
+            else:
+                ghost_score += 200
+        else:
+            if ghost_dist == 0:
+                ghost_score -= 1000  #death penalty RAWR
+            elif ghost_dist <= 1:
+                ghost_score -= 500
+            elif ghost_dist <= 2:
+                ghost_score -= 100
+            else:
+                ghost_score -= 10 / ghost_dist
+
+    capsule_score = 0
+    if capsules:
+        capsule_distances = [manhattanDistance(pos, cap_pos) for cap_pos in capsules]
+        closest_capsule_dist = min(capsule_distances)
+        capsule_score = 50 / (closest_capsule_dist + 1)
+        capsule_score -= 10 * len(capsules)
+
+    return score + food_score + food_count_penalty + ghost_score + capsule_score
+
 better = betterEvaluationFunction
